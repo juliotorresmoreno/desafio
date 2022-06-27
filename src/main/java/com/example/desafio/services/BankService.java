@@ -1,5 +1,7 @@
 package com.example.desafio.services;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +22,7 @@ public class BankService {
         return this.bankRepository.findAll();
     }
 
-    public Bank findBankById(Long id) {
-        return bankRepository.findBankById(id);
+    public Optional<Bank> findById(Long id) {
+        return bankRepository.findById(id);
     }
 }

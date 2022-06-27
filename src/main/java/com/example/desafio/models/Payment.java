@@ -13,7 +13,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 @Entity
 @Table(name = "payments")
-public class Payments {
+public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -32,18 +32,18 @@ public class Payments {
     @LastModifiedDate
     private Instant lastModifiedDate;
 
-    public Payments(Long id, Debt debt, Long amount) {
+    public Payment(Long id, Debt debt, Long amount) {
         this.id = id;
         this.debt = debt;
         this.amount = amount;
     }
 
-    public Payments(Debt debt, Long amount) {
+    public Payment(Debt debt, Long amount) {
         this.debt = debt;
         this.amount = amount;
     }
 
-    public Payments() {
+    public Payment() {
     }
 
     public Long getId() {

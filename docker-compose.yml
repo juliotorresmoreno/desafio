@@ -1,0 +1,28 @@
+version: "3.9"
+services:
+  web:
+    build: .
+    image: desafio_web
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/desafio
+      - logvolume01:/var/log
+    links:
+      - postgres
+  postgres:
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=desafio
+      - POSTGRES_PASSWORD=desafio
+    ports:
+      - '15432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+volumes:
+  logvolume01:
+    driver: local
+  db:
+    driver: local

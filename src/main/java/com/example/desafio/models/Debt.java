@@ -38,9 +38,10 @@ public class Debt {
     private Long feesPaid;
     private Float interestRate;
     private Float slowPayingInterestRate;
+    private int dues;
 
     private Instant lastPayment;
-    private Integer regularPayDay;
+    private int regularPayDay;
 
     @Enumerated(value = EnumType.STRING)
     private DebtStatus status;
@@ -62,7 +63,8 @@ public class Debt {
             Long feesPaid,
             Instant lastPayment,
             DebtStatus status,
-            Integer regularPayDay) {
+            int regularPayDay,
+            int dues) {
         this.id = id;
         this.bank = bank;
         this.user = user;
@@ -86,7 +88,8 @@ public class Debt {
             Long feesPaid,
             Instant lastPayment,
             DebtStatus status,
-            Integer regularPayDay) {
+            int regularPayDay,
+            int dues) {
         this.bank = bank;
         this.user = user;
         this.concept = concept;
@@ -182,11 +185,11 @@ public class Debt {
         this.status = status;
     }
 
-    public Integer getRegularPayDay() {
+    public int getRegularPayDay() {
         return regularPayDay;
     }
 
-    public void setRegularPayDay(Integer regularPayDay) {
+    public void setRegularPayDay(int regularPayDay) {
         this.regularPayDay = regularPayDay;
     }
 
@@ -204,5 +207,29 @@ public class Debt {
 
     public void setSlowPayingInterestRate(Float slowPayingInterestRate) {
         this.slowPayingInterestRate = slowPayingInterestRate;
+    }
+
+    public int getDues() {
+        return dues;
+    }
+
+    public void setDues(int dues) {
+        this.dues = dues;
+    }
+
+    public Instant getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public Instant getLastModifiedDate() {
+        return lastModifiedDate;
+    }
+
+    public void setLastModifiedDate(Instant lastModifiedDate) {
+        this.lastModifiedDate = lastModifiedDate;
     }
 }

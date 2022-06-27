@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.desafio.models.Bank;
 import com.example.desafio.models.Debt;
+import com.example.desafio.models.Payment;
 import com.example.desafio.models.User;
 import com.example.desafio.responses.ResponseError;
 import com.example.desafio.responses.ResponseOK;
@@ -22,10 +23,13 @@ import com.example.desafio.services.BankService;
 import com.example.desafio.services.DebtService;
 import com.example.desafio.services.UserService;
 import com.example.desafio.types.DebtStatus;
+import com.example.desafio.utils.Calc;
 
 import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.time.Instant;
 
 @RestController
 @RequestMapping("/me")
@@ -73,7 +77,7 @@ public class MeController {
         POSTAssignToBankError() {
             super();
         }
-        
+
         POSTAssignToBankError(String err) {
             super(err);
         }
@@ -106,7 +110,14 @@ public class MeController {
             final var session = request.getSession();
             final var user = (User) session.getAttribute("user");
 
-            final var bank = bankService.findBankById(content.id);
+            final var _bank = bankService.findById(content.id);
+
+            if (_bank.isEmpty() || _bank == null) {
+                final var response = new POSTAssignToBankError();
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
+
+            final var bank = _bank.get();
 
             user.getBanks().add(bank);
 
@@ -159,13 +170,16 @@ public class MeController {
     interface GETDebtsResponse {
     }
 
-    class GETDebtsOK extends ArrayList<Bank> implements GETDebtsResponse {
+    class GETDebtsOK extends ArrayList<Debt> implements GETDebtsResponse {
         GETDebtsOK() {
         }
 
-        GETDebtsOK(List<Bank> banks) {
-            for (int i = 0; i < banks.size(); i++) {
-                this.add(banks.get(i));
+        GETDebtsOK(List<Debt> debts) {
+            for (int i = 0; i < debts.size(); i++) {
+                var debt = debts.get(i);
+                // debt.setUser(null);
+                debt.getUser().setPassword("");
+                this.add(debt);
             }
         }
     }
@@ -185,7 +199,9 @@ public class MeController {
             final var session = request.getSession();
             final var user = (User) session.getAttribute("user");
 
-            final var response = new GETDebtsOK();
+            final var debts = this.debtService.findByUserId(user.getId());
+
+            final var response = new GETDebtsOK(debts);
 
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
@@ -213,6 +229,7 @@ public class MeController {
     public static class POSTCreateDebtsBody {
         Long bankId;
         Long amount;
+        int dues;
         String concept;
 
         public POSTCreateDebtsBody() {
@@ -241,6 +258,14 @@ public class MeController {
         public void setConcept(String concept) {
             this.concept = concept;
         }
+
+        public int getDues() {
+            return dues;
+        }
+
+        public void setDues(int dues) {
+            this.dues = dues;
+        }
     }
 
     private void POSTCreateDebtsValidate(POSTCreateDebtsBody data) {
@@ -254,11 +279,11 @@ public class MeController {
             MediaType.APPLICATION_JSON_VALUE,
             MediaType.APPLICATION_XML_VALUE
     })
-    public ResponseEntity<POSTAssignToBankResponse> POSTCreateDebts(
+    public ResponseEntity<POSTCreateDebtsResponse> POSTCreateDebts(
             HttpServletRequest request,
-            @RequestBody POSTCreateDebtsBody content) {
+            @RequestBody POSTCreateDebtsBody payload) {
         try {
-            POSTCreateDebtsValidate(content);
+            POSTCreateDebtsValidate(payload);
 
             /**
              * Esto no deberia estar aqui pero para poder tener un api funcional y para
@@ -270,28 +295,40 @@ public class MeController {
 
             final var session = request.getSession();
             final var user = (User) session.getAttribute("user");
-            final var bank = bankService.findBankById(content.bankId);
+            final var _bank = bankService.findById(payload.bankId);
+
+            if (_bank.isEmpty() || _bank == null) {
+                final var response = new POSTCreateDebtsError();
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
+
+            var bank = _bank.get();
+
+            var interest = Calc.rateOfInterest(user);
+            var monthlyPayment = (long) Calc.calculate(payload.amount, interest, payload.dues);
             var debt = new Debt();
             debt.setBank(bank);
             debt.setUser(user);
-            debt.setConcept(content.concept);
-            debt.setCurrentBalance(content.amount);
-            debt.setInitialBalance(content.amount);
-            debt.setMonthlyPayment(content.amount / 12);
+            debt.setConcept(payload.concept);
+            debt.setCurrentBalance(monthlyPayment * payload.dues);
+            debt.setInitialBalance(payload.amount);
+            debt.setDues(payload.dues);
+            debt.setMonthlyPayment(monthlyPayment);
             debt.setFeesPaid((long) 0);
             debt.setStatus(DebtStatus.ACTIVE);
+            debt.setCreatedDate(Instant.now());
+            debt.setLastModifiedDate(Instant.now());
             this.debtService.save(debt);
 
             userService.save(user);
 
-            return new ResponseEntity<>(new POSTAssignToBankOK(), HttpStatus.OK);
+            return new ResponseEntity<>(new POSTCreateDebtsOK(), HttpStatus.OK);
         } catch (Exception e) {
             logger.warning(e.getMessage());
-            final var response = new POSTAssignToBankError();
+            final var response = new POSTCreateDebtsError();
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
 
     interface POSTPayFeeResponse {
     }
@@ -340,7 +377,7 @@ public class MeController {
 
     }
 
-    @PostMapping(value = "/createDebts", consumes = {
+    @PostMapping(value = "/payFee", consumes = {
             MediaType.APPLICATION_JSON_VALUE,
             MediaType.APPLICATION_XML_VALUE
     }, produces = {
@@ -349,9 +386,9 @@ public class MeController {
     })
     public ResponseEntity<POSTPayFeeResponse> POSTPayFee(
             HttpServletRequest request,
-            @RequestBody POSTPayFeeBody content) {
+            @RequestBody POSTPayFeeBody payload) {
         try {
-            POSTPayFeeValidate(content);
+            POSTPayFeeValidate(payload);
 
             /**
              * Esto no deberia estar aqui pero para poder tener un api funcional y para
@@ -363,7 +400,7 @@ public class MeController {
 
             final var session = request.getSession();
             final var user = (User) session.getAttribute("user");
-            final var _debt = debtService.findByUserIdAndId(user.getId(), content.getId());
+            final var _debt = debtService.findByUserIdAndId(user.getId(), payload.getId());
 
             if (_debt == null) {
                 final var response = new POSTPayFeeError("No se encontro el credito");
@@ -371,13 +408,43 @@ public class MeController {
             }
             var debt = _debt.get();
 
+            if (debt.getStatus() == DebtStatus.INACTIVE) {
+                final var response = new POSTPayFeeError("Esta deuda ya ha sido pagada!.");
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
+
             var feesPaid = debt.getFeesPaid();
             var currentBalance = debt.getCurrentBalance();
-            var lastPayment = debt.getLastPayment();
+            var monthlyPayment = debt.getMonthlyPayment();
+            // var lastPayment = debt.getLastPayment();
+
+            // TODO: Validar si el pago se da en fecha correcta o si lleva mora y 
+            // aplicar los intereses que correspondan. Aca no tengo ni idea de si 
+            // los intereses se calculan sobre la cuota o sobre el monto total, 
+            // por lo que he decidido mantener los valores.
+
+            if (!monthlyPayment.equals(payload.amount)) {
+                final var response = new POSTPayFeeError("El monto a pagar debe ser " + monthlyPayment + "!.");
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
+
+            debt.setFeesPaid(feesPaid + 1);
+            debt.setCurrentBalance(currentBalance - payload.amount);
+            debt.setLastPayment(Instant.now());
+            debt.setLastModifiedDate(Instant.now());
+            if (debt.getCurrentBalance() <= 0) {
+                debt.setCurrentBalance((long)0);
+                debt.setStatus(DebtStatus.INACTIVE);
+            }
 
             this.debtService.save(debt);
 
-            userService.save(user);
+            var payment = new Payment();
+            payment.setAmount(payload.amount);
+            payment.setDebt(debt);
+            payment.setPaymentDate(Instant.now());
+            payment.setCreatedDate(Instant.now());
+            payment.setLastModifiedDate(Instant.now());
 
             return new ResponseEntity<>(new POSTPayFeeOK(), HttpStatus.OK);
         } catch (Exception e) {

@@ -1,6 +1,6 @@
 
 @host=http://localhost:8080
-@authorization=Bearer eyJhbGciOiJIUzUxMiJ9.eyJqdGkiOiJzb2Z0dGVrSldUIiwic3ViIjoianRvcnJlczk5MEBnbWFpbC5jb20iLCJhdXRob3JpdGllcyI6WyJST0xFX1VTRVIiXSwiaWF0IjoxNjU2MjcxNDA5LCJleHAiOjE2NTYzNTc4MDl9.6oGvLoHEeJG214L25i8A2m0L79A8fHpFt10nA6p_S_CB724WPlZsYtd-6ZummBCp1eVVRbq0-RZD9D_45eeRAA
+@authorization=Bearer eyJhbGciOiJIUzUxMiJ9.eyJqdGkiOiJzb2Z0dGVrSldUIiwic3ViIjoianRvcnJlczk5MEBnbWFpbC5jb20iLCJhdXRob3JpdGllcyI6WyJST0xFX1VTRVIiXSwiaWF0IjoxNjU2MzQ4ODk4LCJleHAiOjE2NTY0MzUyOTh9.wf3R16gJP6FBxg3NQ06SG3E98wsUDlOqTIV3yWxAwLWEqgr9-d4RyqSs1hWcIm_n8PfRC4nE0vSYBTb6sAT0cQ
 
 ###
 POST http://localhost:8080/users/sign-up
@@ -49,32 +49,31 @@ Authorization: {{authorization}}
 }
 
 ###
-PATCH {{host}}/banks/6
+POST {{host}}/banks
 Content-Type: application/json
 Authorization: {{authorization}}
 
 {
-    "name": "bancolombia2"
+    "name": "credibanco"
 }
 
 ###
-POST {{host}}/users/assignToBank
+PATCH {{host}}/banks/9
 Content-Type: application/json
 Authorization: {{authorization}}
 
 {
-    "id": 6
+    "name": "Bancolombia"
 }
 
 ###
-GET {{host}}/users/banks
+POST {{host}}/me/assignToBank
 Content-Type: application/json
 Authorization: {{authorization}}
 
-###
-GET {{host}}/users/me/banks
-Content-Type: application/json
-Authorization: {{authorization}}
+{
+    "id": 9
+}
 
 ###
 GET {{host}}/me/banks
@@ -92,7 +91,23 @@ Authorization: {{authorization}}
 Content-Type: application/json
 
 {
-    "bankId": 6,
-    "amount": 12000,
-    "concept": "pago de nomina"
+    "bankId": 9,
+    "amount": 1000000,
+    "dues": 12,
+    "concept": "Lavadora"
+}
+
+###
+GET {{host}}/me/debts
+Content-Type: application/json
+Authorization: {{authorization}}
+
+###
+POST {{host}}/me/payFee
+Authorization: {{authorization}}
+Content-Type: application/json
+
+{
+    "id": 15,
+    "amount": 90259
 }

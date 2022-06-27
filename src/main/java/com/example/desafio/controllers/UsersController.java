@@ -1,5 +1,6 @@
 package com.example.desafio.controllers;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletRequest;
@@ -211,6 +212,9 @@ public class UsersController {
             final var user = new User(content.getFirstname(), content.getLastname(), content.getEmail(),
                     content.getPhone(),
                     content.getPassword());
+            user.setCreatedDate(Instant.now());
+            user.setLastModifiedDate(Instant.now());
+
             userService.save(user);
             final var response = new POSTSignUpResponseOK();
             return new ResponseEntity<>(response, HttpStatus.OK);
@@ -227,6 +231,27 @@ public class UsersController {
         }
     }
 
+    interface GETSessionResponse {
+    }
+
+    class GETSessionOK implements GETSessionResponse {
+        String id;
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+    }
+
+    class GETSessionError extends ResponseError implements GETSessionResponse {
+        GETSessionError(String err) {
+            super(err);
+        }
+    }
+
     @GetMapping(value = "/session", consumes = {
             MediaType.APPLICATION_JSON_VALUE,
             MediaType.APPLICATION_XML_VALUE
@@ -234,20 +259,20 @@ public class UsersController {
             MediaType.APPLICATION_JSON_VALUE,
             MediaType.APPLICATION_XML_VALUE
     })
-    public ResponseEntity GETSession(HttpServletRequest request) {
+    public ResponseEntity<GETSessionResponse> GETSession(HttpServletRequest request) {
         try {
             final var session = request.getSession();
 
-            final var response = new HashMap<String, Object>();
-            response.put("id", session.getId());
+            final var response = new GETSessionOK();
+            response.setId(session.getId());
 
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (DataIntegrityViolationException e) {
-            final var response = new POSTSignUpResponseError("El correo electonico ya ha sido registrado!");
+            final var response = new GETSessionError("El correo electonico ya ha sido registrado!");
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             logger.warning(e.getMessage());
-            final var response = new POSTSignUpResponseError("Ha ocurrido un error interno del servidor!");
+            final var response = new GETSessionError("Ha ocurrido un error interno del servidor!");
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

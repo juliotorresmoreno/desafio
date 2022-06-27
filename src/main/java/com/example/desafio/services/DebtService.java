@@ -1,5 +1,6 @@
 package com.example.desafio.services;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,5 +24,9 @@ public class DebtService {
 
     public Optional<Debt> findByUserIdAndId(Long userId, Long id) {
         return repository.findByUserIdAndId(userId, id);
+    }
+
+    public List<Debt> findByUserId(Long userId) {
+        return repository.findByUserId(userId);
     }
 }
