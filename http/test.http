@@ -1,0 +1,98 @@
+
+@host=http://localhost:8080
+@authorization=Bearer eyJhbGciOiJIUzUxMiJ9.eyJqdGkiOiJzb2Z0dGVrSldUIiwic3ViIjoianRvcnJlczk5MEBnbWFpbC5jb20iLCJhdXRob3JpdGllcyI6WyJST0xFX1VTRVIiXSwiaWF0IjoxNjU2MjcxNDA5LCJleHAiOjE2NTYzNTc4MDl9.6oGvLoHEeJG214L25i8A2m0L79A8fHpFt10nA6p_S_CB724WPlZsYtd-6ZummBCp1eVVRbq0-RZD9D_45eeRAA
+
+###
+POST http://localhost:8080/users/sign-up
+Content-Type: application/json
+
+{
+    "firstname": "julio",
+    "lastname": "torres",
+    "email": "jtorres990@gmail.com",
+    "phone": "3013819315",
+    "password": "12345678"
+}
+
+###
+POST http://localhost:8080/users/sign-in
+Content-Type: application/json
+Accept: application/json
+
+{
+    "email": "jtorres990@gmail.com",
+    "password": "12345678"
+}
+
+###
+GET http://localhost:8080/users/session
+Authorization: {{authorization}}
+Content-Type: application/json
+Accept: application/json
+
+
+###
+GET {{host}}/home
+
+###
+GET {{host}}/banks
+Content-Type: application/json
+Authorization: {{authorization}}
+
+###
+POST {{host}}/banks
+Content-Type: application/json
+Authorization: {{authorization}}
+
+{
+    "name": "bancolombia"
+}
+
+###
+PATCH {{host}}/banks/6
+Content-Type: application/json
+Authorization: {{authorization}}
+
+{
+    "name": "bancolombia2"
+}
+
+###
+POST {{host}}/users/assignToBank
+Content-Type: application/json
+Authorization: {{authorization}}
+
+{
+    "id": 6
+}
+
+###
+GET {{host}}/users/banks
+Content-Type: application/json
+Authorization: {{authorization}}
+
+###
+GET {{host}}/users/me/banks
+Content-Type: application/json
+Authorization: {{authorization}}
+
+###
+GET {{host}}/me/banks
+Content-Type: application/json
+Authorization: {{authorization}}
+
+###
+GET {{host}}/me/debts
+Content-Type: application/json
+Authorization: {{authorization}}
+
+###
+POST {{host}}/me/createDebts
+Authorization: {{authorization}}
+Content-Type: application/json
+
+{
+    "bankId": 6,
+    "amount": 12000,
+    "concept": "pago de nomina"
+}
